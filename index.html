@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeCoding: Болашақ білім беру</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+        body {
+            background: linear-gradient(135deg, #020024 0%, #090979 35%, #4a0000 100%);
+            color: #00ffcc;
+            font-family: 'Share Tech Mono', monospace;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .cyber-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Hologram Projector Effect */
+        .hologram-emitter {
+            position: absolute;
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 200px;
+            background: conic-gradient(from 180deg at 50% 100%, transparent 0deg, rgba(0, 255, 255, 0.1) 20deg, rgba(0, 255, 255, 0.3) 180deg, rgba(0, 255, 255, 0.1) 340deg, transparent 360deg);
+            filter: blur(20px);
+            z-index: 1;
+            pointer-events: none;
+            animation: flicker 4s infinite;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 0.5; }
+            52% { opacity: 0.8; }
+            54% { opacity: 0.5; }
+        }
+
+        /* Hologram Box Content */
+        .holo-box {
+            background: rgba(10, 20, 40, 0.6);
+            border: 1px solid rgba(0, 255, 255, 0.4);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.15), inset 0 0 30px rgba(0, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+            position: relative;
+            transform-style: preserve-3d;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .holo-box::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(0deg, transparent 0px, transparent 1px, rgba(0, 255, 255, 0.05) 2px);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .corner {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border: 3px solid #00ffcc;
+            box-shadow: 0 0 10px #00ffcc;
+            transition: all 0.3s;
+        }
+        .top-left { top: -2px; left: -2px; border-bottom: none; border-right: none; }
+        .top-right { top: -2px; right: -2px; border-bottom: none; border-left: none; }
+        .bottom-left { bottom: -2px; left: -2px; border-top: none; border-right: none; }
+        .bottom-right { bottom: -2px; right: -2px; border-top: none; border-left: none; }
+
+        /* Moving Lines (Circuit) */
+        .circuit-line {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 0;
+        }
+        .line-h { height: 1px; width: 100%; top: 20%; animation: scanMove 5s linear infinite; }
+        .line-v { width: 1px; height: 100%; left: 20%; animation: scanMoveV 7s linear infinite; }
+
+        @keyframes scanMove { 0% { top: -10%; } 100% { top: 110%; } }
+        @keyframes scanMoveV { 0% { left: -10%; } 100% { left: 110%; } }
+
+        /* Floating Eureka Bulbs */
+        .floating-icon {
+            position: absolute;
+            opacity: 0.2;
+            animation: floatIcon 15s infinite linear;
+            color: yellow;
+            z-index: 0;
+        }
+        @keyframes floatIcon {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(100px, -100px) rotate(180deg); }
+            100% { transform: translate(0, 0) rotate(360deg); }
+        }
+
+        /* Typewriter Effect */
+        .typewriter {
+            border-right: .15em solid orange; 
+            animation: blink-caret .75s step-end infinite;
+        }
+        @keyframes blink-caret { from, to { border-color: transparent } 50% { border-color: #00ffcc; } }
+
+        /* Scrollbar for content */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #00ffcc; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Custom SVGs
+        const Lightbulb = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2 1.5-3.5 0-3-2.5-5.5-5.5-5.5S7 5 7 8c0 1.5.5 2.5 1.5 3.5.8.8 1.3 1.5 1.5 2.5"></path>
+                <path d="M9 18h6"></path>
+                <path d="M10 22h4"></path>
+            </svg>
+        );
+
+        const Cpu = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                <rect x="9" y="9" width="6" height="6"></rect>
+                <line x1="9" y1="1" x2="9" y2="4"></line>
+                <line x1="15" y1="1" x2="15" y2="4"></line>
+                <line x1="9" y1="20" x2="9" y2="23"></line>
+                <line x1="15" y1="20" x2="15" y2="23"></line>
+            </svg>
+        );
+
+        const Terminal = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <polyline points="4 17 10 11 4 5"></polyline>
+                <line x1="12" y1="19" x2="20" y2="19"></line>
+            </svg>
+        );
+
+        const Brain = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"></path>
+                <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"></path>
+            </svg>
+        );
+
+        const Code = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <polyline points="16 18 22 12 16 6"></polyline>
+                <polyline points="8 6 2 12 8 18"></polyline>
+            </svg>
+        );
+
+        const Gamepad2 = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <line x1="6" y1="12" x2="10" y2="12"></line>
+                <line x1="8" y1="10" x2="8" y2="14"></line>
+                <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+            </svg>
+        );
+
+        const Sparkles = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L12 3Z"></path>
+            </svg>
+        );
+
+        const ChevronLeft = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+        );
+
+        const ChevronRight = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+        );
+
+        const App = () => {
+            const [currentSlide, setCurrentSlide] = useState(0);
+            const [textIndex, setTextIndex] = useState(0);
+            const [showButton, setShowButton] = useState(false);
+
+            const totalSlides = 6;
+
+            const nextSlide = () => {
+                if (currentSlide < totalSlides - 1) setCurrentSlide(prev => prev + 1);
+            };
+
+            const prevSlide = () => {
+                if (currentSlide > 0) setCurrentSlide(prev => prev - 1);
+            };
+
+            // Slide 0: Typing Effect Logic
+            const fullText = "Жүйе іске қосылуда...\nМұғалім, ояныңыз...\nЕскі әдістер енді жұмыс істемейді.\nКод жазу үшін сізге бағдарламашы болудың қажеті жоқ.\nБұл жай ғана код емес...\nБұл — VIBE.";
+            
+            useEffect(() => {
+                if (currentSlide === 0) {
+                    if (textIndex < fullText.length) {
+                        const timeout = setTimeout(() => {
+                            setTextIndex(prev => prev + 1);
+                        }, 50);
+                        return () => clearTimeout(timeout);
+                    } else {
+                        setShowButton(true);
+                    }
+                }
+            }, [textIndex, currentSlide]);
+
+            const slides = [
+                // SLIDE 0: HOOK
+                <div className="flex flex-col items-center justify-center h-full text-center p-8 relative z-20">
+                    <Cpu size={64} className="text-cyan-400 mb-6 animate-pulse" />
+                    <div className="font-mono text-xl md:text-3xl text-green-400 min-h-[300px] text-left w-full max-w-2xl bg-black/50 p-6 border border-green-800 rounded shadow-[0_0_20px_rgba(0,255,0,0.2)]">
+                        {fullText.substring(0, textIndex)}
+                        <span className="animate-pulse">_</span>
+                    </div>
+                    {showButton && (
+                        <button 
+                            onClick={nextSlide}
+                            className="mt-8 px-8 py-3 bg-cyan-900/40 border border-cyan-400 text-cyan-300 hover:bg-cyan-800/60 hover:shadow-[0_0_15px_#00e5ff] transition-all uppercase tracking-widest cyber-font"
+                        >
+                            Жүйеге кіру
+                        </button>
+                    )}
+                </div>,
+
+                // SLIDE 1: TITLE
+                <div className="flex flex-col items-center justify-center h-full text-center relative z-20">
+                    <div className="holo-box p-12 max-w-4xl w-full mx-4">
+                        <div className="corner top-left"></div>
+                        <div className="corner top-right"></div>
+                        <div className="corner bottom-left"></div>
+                        <div className="corner bottom-right"></div>
+                        
+                        <h2 className="text-green-400 text-lg tracking-[0.3em] mb-4 uppercase">Семинар-Практикум</h2>
+                        <h1 className="text-4xl md:text-6xl font-bold cyber-font text-white mb-8 glitch" data-text="ЖАСАНДЫ ИНТЕЛЛЕКТТІ ТИІМДІ ПАЙДАЛАНУ">
+                            ЖАСАНДЫ ИНТЕЛЛЕКТТІ<br/>ТИІМДІ ПАЙДАЛАНУ
+                        </h1>
+                        <div className="h-1 w-32 bg-cyan-500 mx-auto mb-8 shadow-[0_0_10px_#00ffff]"></div>
+                        <p className="text-xl md:text-2xl text-cyan-300 max-w-2xl mx-auto leading-relaxed">
+                            Сабаққа <span className="text-yellow-400 font-bold bg-yellow-900/30 px-2 rounded">VibeCoding</span> әдісі арқылы интерактивті тапсырмалар әзірлеу жолдары
+                        </p>
+                    </div>
+                </div>,
+
+                // SLIDE 2: WHAT IS VIBECODING?
+                <div className="flex flex-col items-center justify-center h-full p-8 z-20">
+                    <h2 className="text-4xl cyber-font text-yellow-400 mb-8 border-b-2 border-yellow-600 pb-2 inline-block">Vibe Coding деген не?</h2>
+                    
+                    <div className="grid md:grid-cols-2 gap-8 w-full max-w-7xl">
+                        <div className="holo-box p-8 flex flex-col justify-center">
+                            <Code size={48} className="text-pink-500 mb-4" />
+                            <h3 className="text-2xl text-white mb-4 font-bold">Толық Анықтама</h3>
+                            <p className="text-lg text-gray-300 leading-loose text-justify">
+                                <span className="text-cyan-400 font-bold">Вайб-кодинг (vibe coding)</span> — бағдарламалаудағы тәсіл, онда әзірлеуші кодты нейрожелілік агенттердің көмегімен жазады.
+                                Адам өзінің идеясын және оның жұмыс механикасын қарапайым тілде сипаттайды, ал ЖИ осы сипаттама-промт негізінде кодты генерациялайды.
+                            </p>
+                        </div>
+                        <div className="holo-box p-8 flex flex-col justify-center relative overflow-hidden group hover:border-pink-500 transition-colors">
+                             <Brain size={48} className="text-cyan-500 mb-4" />
+                            <h3 className="text-2xl text-white mb-4 font-bold">Неге мұғалімдер үшін маңызды?</h3>
+                            <ul className="space-y-4 text-gray-300">
+                                <li className="flex items-start bg-blue-900/20 p-3 rounded">
+                                    <span className="text-green-500 mr-2 font-bold text-xl">✓</span>
+                                    Вайб-кодерге, яғни бізге бағдарламалауды терең білудің қажеті жоқ.
+                                </li>
+                                <li className="flex items-start bg-blue-900/20 p-3 rounded">
+                                    <span className="text-green-500 mr-2 font-bold text-xl">✓</span>
+                                    Бар болғаны — жасанды интеллект агентіне тапсырманы (промтты) сауатты қоя білу.
+                                </li>
+                                <li className="flex items-start bg-blue-900/20 p-3 rounded">
+                                    <span className="text-green-500 mr-2 font-bold text-xl">✓</span>
+                                    Бұл уақытты үнемдейді және шығармашылыққа жол ашады.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>,
+
+                // SLIDE 3: PROMPT ENGINEERING
+                <div className="flex flex-col items-center justify-center h-full p-6 z-20">
+                    <h2 className="text-3xl cyber-font text-cyan-400 mb-6">Сәтті ПРОМТ формуласы</h2>
+                    <p className="text-gray-400 mb-6 max-w-4xl text-center">Промт — бұл ЖИ-ге берілетін нақты нұсқаулық. Жақсы нәтиже алу үшін мына 4 элементті қамту керек:</p>
+                    
+                    <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                        <div className="bg-gradient-to-b from-blue-900/50 to-black border border-blue-500 p-4 rounded hover:scale-105 transition-transform">
+                            <span className="block text-4xl mb-2">🎭</span>
+                            <span className="block text-xl font-bold text-white mb-2">1. Рөл (Role)</span>
+                            <span className="text-sm text-gray-300 block min-h-[60px]">ЖИ-ге кім болу керектігін айтыңыз. <br/><br/><i>"Сіз — тәжірибелі әдіскерсіз..."</i></span>
+                        </div>
+                        <div className="bg-gradient-to-b from-purple-900/50 to-black border border-purple-500 p-4 rounded hover:scale-105 transition-transform">
+                            <span className="block text-4xl mb-2">🎯</span>
+                            <span className="block text-xl font-bold text-white mb-2">2. Тапсырма (Task)</span>
+                            <span className="text-sm text-gray-300 block min-h-[60px]">Нақты не істеу керек?<br/><br/><i>"Маған Абайдың 7-қара сөзі бойынша тест құрастырыңыз..."</i></span>
+                        </div>
+                        <div className="bg-gradient-to-b from-green-900/50 to-black border border-green-500 p-4 rounded hover:scale-105 transition-transform">
+                            <span className="block text-4xl mb-2">🌍</span>
+                            <span className="block text-xl font-bold text-white mb-2">3. Контекст</span>
+                            <span className="text-sm text-gray-300 block min-h-[60px]">Кімге арналған? Жағдай қандай?<br/><br/><i>"6-сынып оқушыларына арналған, тілі жеңіл..."</i></span>
+                        </div>
+                        <div className="bg-gradient-to-b from-yellow-900/50 to-black border border-yellow-500 p-4 rounded hover:scale-105 transition-transform">
+                            <span className="block text-4xl mb-2">📝</span>
+                            <span className="block text-xl font-bold text-white mb-2">4. Формат</span>
+                            <span className="text-sm text-gray-300 block min-h-[60px]">Нәтиже қандай түрде керек?<br/><br/><i>"HTML файл түрінде, кесте түрінде..."</i></span>
+                        </div>
+                    </div>
+
+                    <div className="holo-box w-full max-w-5xl p-6 border-l-8 border-green-500 shadow-[0_0_15px_rgba(0,255,0,0.3)]">
+                        <h3 className="text-green-400 font-bold mb-2 text-xl">✅ Үлгі (ЖИ-ге тапсырма):</h3>
+                        <p className="text-white font-mono italic">
+                            "Сіз — жоғары санатты қазақ тілі мен әдебиеті мұғалімісіз (Рөл). 6-сынып оқушыларына арналған (Контекст) Абайдың 7-қара сөзі бойынша 'Тән құмары мен Жан құмары' тақырыбында интерактивті сәйкестендіру ойынын жасап беріңіз (Тапсырма). Ойын бір ғана HTML файлда болсын, қате жауапқа дыбыстық сигнал берілсін (Формат)."
+                        </p>
+                    </div>
+                </div>,
+
+                 // SLIDE 4: GEMINI & CANVAS
+                 <div className="flex flex-col items-center justify-center h-full p-8 z-20">
+                    <h2 className="text-5xl cyber-font text-white mb-4">Gemini Canvas</h2>
+                    <p className="text-xl text-cyan-300 mb-12 tracking-wider">СІЗДІҢ ВИРТУАЛДЫ ШЕБЕРХАНАҢЫЗ</p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl">
+                        <div className="holo-box p-6 hover:scale-105 transition-transform duration-300">
+                            <Gamepad2 size={40} className="text-purple-400 mb-4" />
+                            <h3 className="text-xl font-bold mb-2">Ойындар</h3>
+                            <p className="text-sm text-gray-400">Викториналар, сөзжұмбақтар, "Миллионер" ойындарын 1 минутта жасайды.</p>
+                        </div>
+                        <div className="holo-box p-6 hover:scale-105 transition-transform duration-300 border-yellow-500">
+                            <Terminal size={40} className="text-yellow-400 mb-4" />
+                            <h3 className="text-xl font-bold mb-2">Веб-қосымшалар</h3>
+                            <p className="text-sm text-gray-400">Ешқандай орнатусыз, тікелей браузерде ашылатын интерактивті сайттар.</p>
+                        </div>
+                        <div className="holo-box p-6 hover:scale-105 transition-transform duration-300">
+                            <Sparkles size={40} className="text-pink-400 mb-4" />
+                            <h3 className="text-xl font-bold mb-2">Көрнекілік</h3>
+                            <p className="text-sm text-gray-400">Күрделі тақырыптарды анимация немесе инфографика арқылы түсіндіру.</p>
+                        </div>
+                    </div>
+                </div>,
+
+                // SLIDE 5: PRACTICE TASKS (UPDATED - Chronology Game)
+                <div className="flex flex-col h-full p-8 z-20 overflow-y-auto">
+                    <h2 className="text-3xl cyber-font text-center text-green-400 mb-8 sticky top-0 bg-[#050505]/90 py-4 backdrop-blur z-30">
+                        Практика: Абайдың 7-қара сөзі
+                    </h2>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-7xl mx-auto pb-20">
+                        
+                        {/* Task 1: Chronological Sequence Game */}
+                        <div className="holo-box p-6 border-l-4 border-l-purple-500 bg-gray-900/80">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xl font-bold text-white">1-тапсырма: Хронологиялық тізбек</h3>
+                                <span className="bg-purple-900 text-purple-200 text-xs px-2 py-1 rounded">Logic Game</span>
+                            </div>
+                            <p className="text-gray-400 text-sm mb-4">Оқушының логикасын дамытуға арналған ойын промты:</p>
+                            <div className="bg-black p-4 rounded font-mono text-sm text-green-300 border border-gray-700 whitespace-pre-wrap">
+                                <span className="text-gray-500">>>> КӨШІРІП АЛЫҢЫЗ:</span><br/><br/>
+                                "Сіз — креативті мұғалімсіз.<br/><br/>
+                                <strong>Тапсырма:</strong> Маған Абайдың 7-қара сөзіндегі ой желісі бойынша 'Хронологиялық тізбек' ойынын жасап беріңіз.<br/><br/>
+                                <strong>Механика:</strong><br/>
+                                1. Экранда шашыраңқы логикалық блоктар (сөйлемдер) беріледі.<br/>
+                                2. Оқушы оларды дұрыс ретпен (1, 2, 3...) тізбектеуі керек.<br/>
+                                3. Дұрыс қойылса -> жағымды дыбыс шықсын.<br/>
+                                4. Бұрыс қойылса -> жағымсыз (қате) дыбыс шығып, блок қызыл түспен жыпылықтасын (мигать етсін).<br/>
+                                <strong>Мазмұны:</strong> 'Жас баланың анадан туғандағы екі түрлі мінезі' -> 'Тән құмары (ішсем, жесем)' -> 'Жан құмары (білсем екен)'."
+                            </div>
+                        </div>
+
+                         {/* Task 2: Interactive Essay/Notebook */}
+                         <div className="holo-box p-6 border-l-4 border-l-yellow-500 bg-gray-900/80">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xl font-bold text-white">2-тапсырма: Интерактивті дәптер</h3>
+                                <span className="bg-yellow-900 text-yellow-200 text-xs px-2 py-1 rounded">Web App</span>
+                            </div>
+                            <p className="text-gray-400 text-sm mb-4">Эссе жазуға арналған промт:</p>
+                            <div className="bg-black p-4 rounded font-mono text-sm text-green-300 border border-gray-700 whitespace-pre-wrap">
+                                <span className="text-gray-500">>>> КӨШІРІП АЛЫҢЫЗ:</span><br/><br/>
+                                "Сіз — білікті әдебиет пәнінің әдіскерісіз.<br/><br/>
+                                <strong>Тапсырма:</strong> Маған Абайдың 7-қара сөзі бойынша 'Сандық жұмыс дәптерін' (бір беттік веб-сайт) жасап беріңіз.<br/><br/>
+                                <strong>Функционал:</strong><br/>
+                                1. Беттің басында қара сөздің толық мәтіні әдемі қаріппен тұрсын.<br/>
+                                2. Мәтін ішіндегі 'көкірек көзі', 'жан құмары' сөздерін басқанда, олардың мағынасы қалқымалы терезеде ашылсын.<br/>
+                                3. Төменде 'Менің жан құмарым не?' тақырыбында эссе жазатын орын болсын.<br/>
+                                4. 'Тексеру' батырмасын басқанда, ЖИ оқушыға автоматты түрде кері байланыс (мақтау сөздер) шығарсын."
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            ];
+
+            return (
+                <div className="w-full h-screen relative overflow-hidden">
+                    {/* Hologram Emitter Effect */}
+                    <div className="hologram-emitter"></div>
+
+                    {/* Animated Circuit Lines */}
+                    <div className="circuit-line line-h" style={{top: '15%'}}></div>
+                    <div className="circuit-line line-h" style={{top: '45%', animationDelay: '2s'}}></div>
+                    <div className="circuit-line line-h" style={{top: '85%', animationDelay: '4s'}}></div>
+                    <div className="circuit-line line-v" style={{left: '10%'}}></div>
+                    <div className="circuit-line line-v" style={{left: '90%', animationDelay: '3s'}}></div>
+
+                    {/* Floating Eureka Icons */}
+                    <div className="floating-icon" style={{top: '10%', left: '10%', animationDelay: '0s'}}>
+                        <Lightbulb size={48} />
+                    </div>
+                    <div className="floating-icon" style={{top: '70%', right: '20%', animationDelay: '5s'}}>
+                        <Lightbulb size={32} />
+                    </div>
+                    <div className="floating-icon" style={{bottom: '10%', left: '30%', animationDelay: '10s'}}>
+                         <Sparkles size={40} className="text-yellow-200" />
+                    </div>
+                    
+                    {/* Background Grid */}
+                    <div className="absolute inset-0 z-0" style={{
+                        backgroundImage: 'linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px)',
+                        backgroundSize: '40px 40px'
+                    }}></div>
+
+                    {/* Main Content Area */}
+                    <main className="flex-grow relative z-10 w-full h-full">
+                        {slides[currentSlide]}
+                    </main>
+
+                    {/* Controls */}
+                    {currentSlide > 0 && (
+                        <div className="absolute bottom-8 left-0 right-0 z-50 flex justify-between items-center px-8">
+                            <button 
+                                onClick={prevSlide}
+                                className="flex items-center text-cyan-500 hover:text-white transition-colors disabled:opacity-30 backdrop-blur-sm bg-black/30 px-4 py-2 rounded border border-cyan-900"
+                                disabled={currentSlide === 0}
+                            >
+                                <ChevronLeft size={24} /> АРТҚА
+                            </button>
+
+                            <div className="flex space-x-2">
+                                {slides.map((_, idx) => (
+                                    idx > 0 && (
+                                        <div 
+                                            key={idx}
+                                            className={`w-3 h-1 rounded-full ${idx === currentSlide ? 'bg-cyan-400 shadow-[0_0_10px_#00ffff]' : 'bg-gray-700'}`}
+                                        />
+                                    )
+                                ))}
+                            </div>
+
+                            <button 
+                                onClick={nextSlide}
+                                className={`flex items-center text-cyan-500 hover:text-white transition-colors backdrop-blur-sm bg-black/30 px-4 py-2 rounded border border-cyan-900 ${currentSlide === totalSlides - 1 ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                disabled={currentSlide === totalSlides - 1}
+                            >
+                                АЛҒА <ChevronRight size={24} />
+                            </button>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
